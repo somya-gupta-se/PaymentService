@@ -1,6 +1,7 @@
 package com.training.PaymentService.service;
 import com.training.PaymentService.client.OrderClient;
 import com.training.PaymentService.event.PaymentSuccessEvent;
+import com.training.PaymentService.exception.PaymentFailedException;
 import com.training.PaymentService.model.Payment;
 import com.training.PaymentService.model.PaymentStatus;
 import com.training.PaymentService.repository.PaymentRepository;
@@ -36,6 +37,7 @@ public class PaymentService {
 
     @Retry(name = PAYMENT_RETRY_INSTANCE, fallbackMethod = "fallbackProcessPayment")
     public Payment processPayment(Long orderId) {
+        boolean paymentSuccess = false;
         LOGGER.info("Communicating with order service to check if order is present");
         OrderClient.OrderResponse order = orderClient.getOrderById(orderId);
 
@@ -51,6 +53,7 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.SUCCESS); // Simulating successful payment
         payment.setPaymentDate(LocalDateTime.now());
         LOGGER.info("Payment successful for Order ID: {} triggering payment success event", orderId);
+        paymentSuccess = true;
 
         String value = "for customer id "+order.customerId()+" and order id is "+orderId;
         // Publish event to Kafka
@@ -60,6 +63,9 @@ public class PaymentService {
         LOGGER.info("updating order id {} status from PLACED to CONFIRMED", orderId);
 
         orderClient.updateOrder(orderId);
+        if (!paymentSuccess) {
+            throw new PaymentFailedException("Payment processing failed for order ID " + orderId);
+        }
 
         return paymentRepository.save(payment);
     }

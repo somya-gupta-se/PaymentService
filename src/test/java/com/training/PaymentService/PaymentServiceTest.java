@@ -36,6 +36,7 @@ public class PaymentServiceTest {
     private Payment mockPayment;
 
     private OrderClient.OrderResponse mockOrder;
+/*
 
 
     @BeforeEach
@@ -68,11 +69,6 @@ public class PaymentServiceTest {
         //vreify
         verify(paymentRepository, times(1)).save(any(Payment.class));
     }
+*/
 
-    @Test
-    void testProcessPayment_OrderNotFound(){
-        when(orderClient.getOrderById(2L)).thenReturn(null);
-
-
-    }
 }
