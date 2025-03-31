@@ -31,7 +31,6 @@ public class PaymentService {
 
     Logger LOGGER = LoggerFactory.getLogger(PaymentService.class);
 
-    //private static final String PAYMENT_SERVICE = "PaymentService";
     private static final String PAYMENT_RETRY_INSTANCE = "PaymentService";
 
 
@@ -40,12 +39,9 @@ public class PaymentService {
         boolean paymentSuccess = false;
         LOGGER.info("Communicating with order service to check if order is present");
         OrderClient.OrderResponse order = orderClient.getOrderById(orderId);
-
-
         if (order == null) {
             throw new RuntimeException("Order not found for ID: " + orderId);
         }
-
         Payment payment = new Payment();
         payment.setOrderId(order.id());
         payment.setCustomerId(order.customerId());
@@ -54,10 +50,7 @@ public class PaymentService {
         payment.setPaymentDate(LocalDateTime.now());
         LOGGER.info("Payment successful for Order ID: {} triggering payment success event", orderId);
         paymentSuccess = true;
-
         String value = "for customer id "+order.customerId()+" and order id is "+orderId;
-        // Publish event to Kafka
-        /*PaymentSuccessEvent event = new PaymentSuccessEvent(orderId, "SUCCESS");*/
         kafkaTemplate.send("paymentTopic", "PAYMENT_SUCCESS", value);
 
         LOGGER.info("updating order id {} status from PLACED to CONFIRMED", orderId);
@@ -72,7 +65,6 @@ public class PaymentService {
 
     public Payment fallbackProcessPayment(Long orderId, Throwable throwable) {
         LOGGER.error("Payment processing failed for Order ID: {}. Reason: {}", orderId, throwable.getMessage());
-
         Payment failedPayment = new Payment();
         failedPayment.setOrderId(orderId);
         failedPayment.setStatus(PaymentStatus.FAILED);
